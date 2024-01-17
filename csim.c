@@ -142,7 +142,7 @@ void simulate_operation(char *trace_line)
     address >>= offset_bit_count; // Don't care about offset
     
     // printf("%" PRIx64 "\n", ~0 << (uint64_t) 32); // Raises warning
-    uint64_t mask = ~0 << set_bit_count;
+    uint64_t mask = (uint64_t) ~0 << set_bit_count;
     uint64_t tag = address & mask;
     uint64_t i = address & ~mask;
     CacheSet *curr_set = cache + i;
