@@ -135,7 +135,8 @@ int main(int argc, char* argv[])
     return 0;
 }
 
-int initialize() {
+int initialize()
+{
     uint64_t bytes_to_allocate = sizeof(CacheSet) * set_count;
     if (bytes_to_allocate / set_count != sizeof(CacheSet)) {
         return 1; // Overflow
@@ -148,7 +149,8 @@ int initialize() {
     return 0;
 }
 
-void cleanup() {
+void cleanup()
+{
     for (uint64_t i = 0; i < set_count; i++) {
         CacheLine *cl = cache[i].lru;
         while (cl != NULL) {
@@ -202,7 +204,8 @@ void simulate_operation(char *trace_line)
     }
 }
 
-void simulate_single_access(CacheSet *curr_set, uint64_t tag) {
+void simulate_single_access(CacheSet *curr_set, uint64_t tag)
+{
     CacheLine *match = find(curr_set, tag);
     if (match == NULL) {
         // Miss
@@ -229,7 +232,8 @@ void simulate_single_access(CacheSet *curr_set, uint64_t tag) {
  * This is O(N), where N = lines per set. This can be made faster by using a
  * hashmap that maps from tag to CacheLine.
  */
-CacheLine *find(CacheSet *set, uint64_t tag) {
+CacheLine *find(CacheSet *set, uint64_t tag)
+{
     CacheLine *l = set->lru;
     while (l != NULL) {
         if (l->tag == tag) {
@@ -241,7 +245,8 @@ CacheLine *find(CacheSet *set, uint64_t tag) {
 }
 
 // Does not free the line!
-CacheLine *evict(CacheSet *set, CacheLine *line) {
+CacheLine *evict(CacheSet *set, CacheLine *line)
+{
     if (set->lru == line) {
         set->lru = line->next;
     }
@@ -263,7 +268,8 @@ CacheLine *evict(CacheSet *set, CacheLine *line) {
  *
  * Note: overwrites line->prev and line->next.
  */
-CacheLine *push(CacheSet *set, CacheLine *line) {
+CacheLine *push(CacheSet *set, CacheLine *line)
+{
     if (set->mru == NULL) {
         // First time
         line->prev = NULL;
@@ -281,7 +287,8 @@ CacheLine *push(CacheSet *set, CacheLine *line) {
     return line;
 }
 
-uint64_t convert_hex_string(char *string) {
+uint64_t convert_hex_string(char *string)
+{
     uint64_t res = 0;
     for (int i = 0; i < strlen(string); i++) {
         uint64_t d = convert_hex_digit(string[strlen(string)-i-1]);
@@ -290,7 +297,8 @@ uint64_t convert_hex_string(char *string) {
     return res;
 }
 
-int convert_hex_digit(char digit) {
+int convert_hex_digit(char digit)
+{
     if (digit >= '0' && digit <= '9') {
         return digit-'0';
     }
