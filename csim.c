@@ -24,7 +24,7 @@ int convert_hex_digit(char digit);
 int initialize();
 uint64_t convert_hex_string(char *string);
 void cleanup();
-void simulate_one(CacheSet *curr_set, uint64_t tag);
+void simulate_single_access(CacheSet *curr_set, uint64_t tag);
 void simulate_operation(char *trace_line);
 CacheLine *find(CacheSet *set, uint64_t tag);
 CacheLine *evict(CacheSet *set, CacheLine *line);
@@ -150,18 +150,18 @@ void simulate_operation(char *trace_line)
     switch (operation) {
     case 'L':
     case 'S':
-        simulate_one(curr_set, tag);
+        simulate_single_access(curr_set, tag);
         break;
     case 'M':
-        simulate_one(curr_set, tag);
-        simulate_one(curr_set, tag);
+        simulate_single_access(curr_set, tag);
+        simulate_single_access(curr_set, tag);
         break;
     default:
         break;
     }
 }
 
-void simulate_one(CacheSet *curr_set, uint64_t tag) {
+void simulate_single_access(CacheSet *curr_set, uint64_t tag) {
     CacheLine *match = find(curr_set, tag);
     if (match == NULL) {
         // Miss
