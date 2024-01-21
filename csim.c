@@ -1,3 +1,10 @@
+/*
+ * Cache simulator: given a valgrind memory trace, report cache hits, misses,
+ * and evictions.
+ *
+ * Solves Cache Lab Part A from https://csapp.cs.cmu.edu/3e/labs.html.
+ */
+
 #include <getopt.h>
 #include <inttypes.h>
 #include <stdint.h>
@@ -8,16 +15,30 @@
 
 // #include "cachelab.h"
 
+/*
+ * A CacheLine is a node in a doubly linked list. A CacheLine contains a tag
+ * which uniquely identifies it within its CacheSet.
+ */
 typedef struct CacheLine {
     uint64_t tag;
     struct CacheLine *prev;
     struct CacheLine *next;
 } CacheLine;
 
+/*
+ * A CacheSet contains pointers to the least recently used (lru) and most
+ * recently used (mru) CacheLine. The lru and mru are the tail and head,
+ * respectively, of a doubly linked list which represents all CacheLines
+ * currently in the CacheSet. The doubly linked list is always kept in a sorted
+ * order, with the less recently used CacheLines towards the tail.
+ *
+ * A CacheSet keeps track of its size in order to determine when it has become
+ * full.
+ */
 typedef struct CacheSet {
-    int size; // Size in lines
-    CacheLine *lru; // Tail
-    CacheLine *mru; // Head
+    int size;
+    CacheLine *lru;
+    CacheLine *mru;
 } CacheSet;
 
 int convert_hex_digit(char digit);
@@ -36,13 +57,21 @@ int set_bit_count = 0;
 int lines_per_set = 0;
 int offset_bit_count = 0;
 
-uint64_t set_count;
+/*
+ * A cache is an array of set_count CacheSets.
+ */
 CacheSet *cache;
+uint64_t set_count;
 
 int hits = 0;
 int misses = 0;
 int evictions = 0;
 
+/*
+ * You must specify the following as command-line arguments: number of bits used
+ * for the set index, number of lines per set, number of bits used for the
+ * offset, path to a valgrind memory trace.
+ */
 int main(int argc, char* argv[])
 {
     int opt;
@@ -131,6 +160,18 @@ void cleanup() {
     free(cache);
 }
 
+/*
+ * A line of a valgrind memory trace may begin with characters 'L', 'S', 'M', or
+ * 'I'. These characters represents data load, data store, data modify, and
+ * instruction load, respectively. We only consider 'L', 'S', and 'M'.
+ *
+ * For the purposes of this simulator, 'M' is equivalent to 'L' and then 'S',
+ * and 'L' and 'S' are equivalent.
+ *
+ * A line of a valgrind memory trace also contains an address. This address is
+ * parsed in order to determine which CacheSet it corresponds to, and which tag
+ * should be searched for in that CacheSet.
+ */
 void simulate_operation(char *trace_line)
 {
     char tmp1[2];
@@ -184,6 +225,10 @@ void simulate_single_access(CacheSet *curr_set, uint64_t tag) {
     }
 }
 
+/*
+ * This is O(N), where N = lines per set. This can be made faster by using a
+ * hashmap that maps from tag to CacheLine.
+ */
 CacheLine *find(CacheSet *set, uint64_t tag) {
     CacheLine *l = set->lru;
     while (l != NULL) {
@@ -213,7 +258,11 @@ CacheLine *evict(CacheSet *set, CacheLine *line) {
     return line;
 }
 
-// Overwrites prev and next pointers
+/*
+ * Makes line into the most recently used CacheLine in set.
+ *
+ * Note: overwrites line->prev and line->next.
+ */
 CacheLine *push(CacheSet *set, CacheLine *line) {
     if (set->mru == NULL) {
         // First time
